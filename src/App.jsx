@@ -37,6 +37,10 @@ export default function App() {
               <Route element={<Layout />}>
                 <Route index element={<DashboardPage />} />
                 <Route path="/doctors" element={<DoctorsPage />} />
+                <Route path="/doctors-on-duty" element={<DoctorsPage />} />
+                <Route path="/doctors/on-duty" element={<DoctorsPage />} />
+                <Route path="/duty" element={<DoctorsPage />} />
+                <Route path="/on-duty" element={<DoctorsPage />} />
                 <Route path="/doctor/:id" element={<DoctorProfilePage />} />
                 <Route path="/patients" element={<PatientsPage />} />
                 <Route path="/patient/:id" element={<PatientProfilePage />} />

@@ -112,8 +112,14 @@ export function DoctorProfilePage() {
               <p className="font-medium">{credentials.languages?.join(', ') || 'English'}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400">Working Hours</p>
-              <p className="font-medium">{doctor.availability || 'Monday - Friday (9:00 AM - 5:00 PM)'}</p>
+              <p className="text-xs text-gray-400">Working Hours & Days</p>
+              <p className="font-medium">
+                {typeof doctor.availability === 'string'
+                  ? doctor.availability
+                  : doctor.availability?.hours
+                  ? `${doctor.availability.hours} (${Array.isArray(doctor.availability.days) ? doctor.availability.days.join(', ') : 'Mon-Fri'})`
+                  : 'Monday - Friday (9:00 AM - 5:00 PM)'}
+              </p>
             </div>
           </div>
         </div>

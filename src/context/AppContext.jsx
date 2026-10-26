@@ -193,6 +193,12 @@ export const AppProvider = ({ children }) => {
     return newDoctor;
   }, [setDoctors]);
 
+  const updateDoctorDutyStatus = useCallback((doctorId, dutyStatus) => {
+    setDoctors(prev =>
+      prev.map(d => (d.id === doctorId ? { ...d, dutyStatus } : d))
+    );
+  }, [setDoctors]);
+
   // Messages
   const sendMessage = useCallback((arg1, arg2, arg3) => {
     let recipientId, text, isDoctorNote = false;
@@ -313,6 +319,8 @@ export const AppProvider = ({ children }) => {
     updateFollowUpStatus,
     addPatient,
     addDoctor,
+    setDoctors,
+    updateDoctorDutyStatus,
     sendMessage,
     resetToDemoData,
     resetToDefault: resetToDemoData,
