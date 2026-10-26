@@ -1,238 +1,180 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  Video,
-  Mic,
-  MicOff,
-  VideoOff,
-  PhoneOff,
-  MessageSquare,
-  Users,
-  Settings,
-  Share2,
-  FileText,
-  Activity,
-  Maximize2,
-  ShieldCheck,
-  Stethoscope,
-  Sparkles
-} from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
-import { Card } from '../components/common/Card.jsx';
-import { Button } from '../components/common/Button.jsx';
-import { Badge } from '../components/common/Badge.jsx';
 
-export const TeleconsultationPage = () => {
-  const { currentDoctor, currentPatient, role } = useApp();
-  const navigate = useNavigate();
-
-  const [isMicMuted, setIsMicMuted] = useState(false);
+export function TeleconsultationPage() {
+  const { doctors, patients } = useApp();
+  const [selectedDoctorId, setSelectedDoctorId] = useState(doctors[0]?.id || '');
+  const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id || '');
+  const [inCall, setInCall] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
-  const [isCallActive, setIsCallActive] = useState(true);
-  const [activeTab, setActiveTab] = useState('notes');
+  const [clinicalNotes, setClinicalNotes] = useState('');
 
-  const [clinicalNotes, setClinicalNotes] = useState(
-    'Patient reports mild chest tightness after exercise. Vitals stable. Recommend ECG review and follow-up in 2 weeks.'
-  );
+  const activeDoc = doctors.find((d) => d.id === selectedDoctorId) || doctors[0];
+  const activePat = patients.find((p) => p.id === selectedPatientId) || patients[0];
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-150">
-      {/* Top Telehealth Control Bar */}
-      <div className="flex items-center justify-between p-4 bg-slate-900 text-white rounded-2xl shadow-md">
-        <div className="flex items-center gap-3">
-          <div className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Teleconsultation Room</h1>
+          <p className="text-gray-500 text-sm">Simulated encrypted video call between doctor and patient</p>
+        </div>
+        <Link
+          to="/prescriptions/new"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg text-sm text-center transition"
+        >
+          + Write Prescription
+        </Link>
+      </div>
+
+      {!inCall ? (
+        /* Pre-Call Setup Screen */
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 max-w-lg mx-auto text-center space-y-5">
+          <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
+            📹
           </div>
           <div>
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-              Encrypted Teleconsultation Room #104
-            </h2>
-            <p className="text-[11px] text-slate-400 font-medium">
-              Active Call: Dr. {currentDoctor?.name?.replace('Dr. ', '') || 'Physician'} &amp; {currentPatient?.name || 'Patient'}
-            </p>
+            <h2 className="text-xl font-bold text-gray-800">Start Video Consultation</h2>
+            <p className="text-gray-500 text-sm mt-1">Select participants and enter the virtual clinic room</p>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2.5">
-          <Badge variant="success" size="sm" className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
-            <ShieldCheck className="w-3.5 h-3.5 inline mr-1" /> HIPAA Encrypted
-          </Badge>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => navigate('/prescriptions/new')}
-            icon={<FileText className="w-3.5 h-3.5" />}
-            className="bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700 font-bold text-xs"
+          <div className="space-y-3 text-left">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Doctor</label>
+              <select
+                value={selectedDoctorId}
+                onChange={(e) => setSelectedDoctorId(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg p-2 text-sm bg-white"
+              >
+                {doctors.map((d) => (
+                  <option key={d.id} value={d.id}>{d.name} ({d.specialty})</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Patient</label>
+              <select
+                value={selectedPatientId}
+                onChange={(e) => setSelectedPatientId(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg p-2 text-sm bg-white"
+              >
+                {patients.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name} ({p.age} yrs)</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setInCall(true)}
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg text-sm transition"
           >
-            Issue Rx
-          </Button>
+            Connect Call Now
+          </button>
         </div>
-      </div>
-
-      {/* Main Video Stage & Clinical Side Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[580px]">
-        {/* Main Video Canvas - 8 Cols */}
-        <div className="lg:col-span-8 bg-slate-950 rounded-3xl p-4 flex flex-col justify-between relative overflow-hidden shadow-xl border border-slate-800">
-          {/* Main Remote Feed View */}
-          <div className="relative w-full h-full flex items-center justify-center rounded-2xl overflow-hidden bg-slate-900">
-            {!isVideoOff ? (
-              <img
-                src={
-                  role === 'doctor'
-                    ? 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&auto=format&fit=crop&q=80'
-                    : 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=800&auto=format&fit=crop&q=80'
-                }
-                alt="Video Participant"
-                className="w-full h-full object-cover opacity-90"
-              />
-            ) : (
-              <div className="flex flex-col items-center gap-2 text-slate-500 text-xs">
-                <VideoOff className="w-10 h-10" />
-                <span className="font-medium">Camera feed disabled</span>
-              </div>
-            )}
-
-            {/* Remote Participant Label */}
-            <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-xl text-white text-xs font-bold flex items-center gap-2 border border-white/10 shadow-lg">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>{role === 'doctor' ? currentPatient?.name : currentDoctor?.name}</span>
-            </div>
-
-            {/* Self Picture-in-Picture (PiP) Window */}
-            <div className="absolute bottom-4 right-4 w-36 h-28 sm:w-44 sm:h-32 bg-slate-800 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl">
-              <img
-                src={
-                  role === 'doctor'
-                    ? currentDoctor?.avatar
-                    : currentPatient?.avatar
-                }
-                alt="Self"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded-md text-[10px] text-white font-bold backdrop-blur-xs">
-                You ({role})
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Floating Telehealth Call Action Dock */}
-          <div className="flex items-center justify-center gap-3 pt-3.5">
-            <button
-              onClick={() => setIsMicMuted(!isMicMuted)}
-              className={`p-3 rounded-2xl transition-all shadow-md cursor-pointer ${
-                isMicMuted ? 'bg-rose-600 text-white shadow-rose-600/30' : 'bg-slate-800 hover:bg-slate-700 text-white'
-              }`}
-              title={isMicMuted ? 'Unmute' : 'Mute'}
-            >
-              {isMicMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-            </button>
-
-            <button
-              onClick={() => setIsVideoOff(!isVideoOff)}
-              className={`p-3 rounded-2xl transition-all shadow-md cursor-pointer ${
-                isVideoOff ? 'bg-rose-600 text-white shadow-rose-600/30' : 'bg-slate-800 hover:bg-slate-700 text-white'
-              }`}
-              title={isVideoOff ? 'Turn Video On' : 'Turn Video Off'}
-            >
-              {isVideoOff ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
-            </button>
-
-            <button
-              onClick={() => {
-                setIsCallActive(false);
-                navigate('/appointments');
-              }}
-              className="px-5 py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-rose-600/30 transition-all cursor-pointer"
-            >
-              <PhoneOff className="w-4 h-4" /> End Call
-            </button>
-          </div>
-        </div>
-
-        {/* Right Clinical Sidebar - 4 Cols */}
-        <Card className="lg:col-span-4 p-0 flex flex-col h-full bg-white border-slate-200/90 shadow-xs overflow-hidden">
-          {/* Header tabs */}
-          <div className="flex items-center border-b border-slate-100 bg-slate-50/50 p-2 gap-1.5">
-            <button
-              onClick={() => setActiveTab('notes')}
-              className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                activeTab === 'notes' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              Consult Notes
-            </button>
-            <button
-              onClick={() => setActiveTab('vitals')}
-              className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                activeTab === 'vitals' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              Patient Vitals
-            </button>
-          </div>
-
-          {/* Tab content */}
-          <div className="p-4 flex-1 flex flex-col justify-between overflow-y-auto">
-            {activeTab === 'notes' ? (
-              <div className="space-y-3 flex-1 flex flex-col">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                  Physician Real-Time SOAP Notes
-                </span>
-                <textarea
-                  value={clinicalNotes}
-                  onChange={e => setClinicalNotes(e.target.value)}
-                  placeholder="Record observations, telemetry readings, and proposed treatments during session..."
-                  className="w-full flex-1 p-3 text-xs bg-slate-50 rounded-xl border border-slate-200 focus:bg-white focus:border-blue-500 outline-none resize-none font-medium leading-relaxed"
-                />
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                  Telemetric Vitals Stream
-                </span>
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/70">
-                    <span className="text-[10px] uppercase font-bold text-slate-400">Heart Rate</span>
-                    <strong className="text-sm font-extrabold font-mono text-slate-900 block mt-0.5">72 BPM</strong>
+      ) : (
+        /* Active Call Screen */
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Video Area */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="bg-slate-900 rounded-2xl overflow-hidden aspect-video relative flex items-center justify-center border border-slate-800 shadow-lg">
+              {/* Doctor Main View */}
+              {isVideoOff ? (
+                <div className="text-center text-slate-400">
+                  <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto text-2xl font-bold text-slate-300 mb-2">
+                    {activeDoc?.name?.charAt(0) || 'D'}
                   </div>
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/70">
-                    <span className="text-[10px] uppercase font-bold text-slate-400">Blood Pressure</span>
-                    <strong className="text-sm font-extrabold font-mono text-blue-600 block mt-0.5">120/80 mmHg</strong>
-                  </div>
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/70">
-                    <span className="text-[10px] uppercase font-bold text-slate-400">SpO2 Oxygen</span>
-                    <strong className="text-sm font-extrabold font-mono text-emerald-600 block mt-0.5">99%</strong>
-                  </div>
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/70">
-                    <span className="text-[10px] uppercase font-bold text-slate-400">Temperature</span>
-                    <strong className="text-sm font-extrabold font-mono text-slate-900 block mt-0.5">98.6 &deg;F</strong>
+                  <p className="font-medium text-slate-300">{activeDoc?.name}</p>
+                  <p className="text-xs text-slate-500">Camera turned off</p>
+                </div>
+              ) : (
+                <div className="w-full h-full relative">
+                  <img
+                    src={activeDoc?.avatar || 'https://images.unsplash.com/photo-1594824813589-4081c7e997a6?w=600&auto=format&fit=crop&q=80'}
+                    alt={activeDoc?.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-medium">
+                    🟢 Live: {activeDoc?.name} ({activeDoc?.specialty})
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => navigate(`/patient/${currentPatient?.id || 'pat-1'}`)}
-                className="text-xs font-bold"
+              {/* Patient PiP (Picture in Picture) */}
+              <div className="absolute bottom-4 right-4 w-32 sm:w-40 aspect-video bg-slate-800 border-2 border-white/20 rounded-xl overflow-hidden shadow-md">
+                <img
+                  src={activePat?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&auto=format&fit=crop&q=80'}
+                  alt={activePat?.name}
+                  className="w-full h-full object-cover"
+                />
+                <span className="absolute bottom-1 left-2 text-[10px] text-white bg-black/50 px-1 rounded">
+                  {activePat?.name}
+                </span>
+              </div>
+            </div>
+
+            {/* In-Call Controls Bar */}
+            <div className="bg-white p-3 rounded-xl border border-gray-100 flex items-center justify-center gap-4 shadow-sm">
+              <button
+                onClick={() => setIsMuted(!isMuted)}
+                className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${
+                  isMuted ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
               >
-                Open Full Chart
-              </Button>
-              <Button
-                size="sm"
-                variant="primary"
-                onClick={() => navigate('/prescriptions/new')}
-                className="text-xs font-bold shadow-xs shadow-blue-500/20"
+                {isMuted ? 'Unmute Mic' : 'Mute Mic'}
+              </button>
+
+              <button
+                onClick={() => setIsVideoOff(!isVideoOff)}
+                className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${
+                  isVideoOff ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
               >
-                Issue Rx Slip
-              </Button>
+                {isVideoOff ? 'Turn Camera On' : 'Turn Camera Off'}
+              </button>
+
+              <button
+                onClick={() => setInCall(false)}
+                className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg text-xs font-bold transition"
+              >
+                End Consultation
+              </button>
             </div>
           </div>
-        </Card>
-      </div>
+
+          {/* Consultation Notes Sidebar */}
+          <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm space-y-4">
+            <h2 className="font-bold text-gray-800 text-base">Session Notes</h2>
+            <div className="text-xs text-gray-500 space-y-1 bg-gray-50 p-3 rounded-lg">
+              <p><span className="font-semibold text-gray-700">Patient:</span> {activePat?.name} ({activePat?.age} yrs)</p>
+              <p><span className="font-semibold text-gray-700">Doctor:</span> {activeDoc?.name}</p>
+              <p><span className="font-semibold text-gray-700">Status:</span> Connected via HD Audio/Video</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Doctor's Live Consultation Notes</label>
+              <textarea
+                value={clinicalNotes}
+                onChange={(e) => setClinicalNotes(e.target.value)}
+                rows={6}
+                placeholder="Type symptoms discussed, blood pressure reported, observations..."
+                className="w-full border border-gray-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <Link
+              to="/prescriptions/new"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg text-xs text-center block transition"
+            >
+              Open Prescription Pad
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
+}

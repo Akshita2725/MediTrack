@@ -1,201 +1,153 @@
 import React, { useState } from 'react';
-import {
-  Database,
-  Download,
-  Upload,
-  RotateCcw,
-  CheckCircle2,
-  AlertTriangle,
-  FileJson,
-  ShieldCheck,
-  HardDrive,
-  Sparkles
-} from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
-import { PageHeader } from '../components/common/PageHeader.jsx';
-import { Card } from '../components/common/Card.jsx';
-import { Button } from '../components/common/Button.jsx';
-import { Badge } from '../components/common/Badge.jsx';
 
-export const BackupPage = () => {
+export function BackupPage() {
   const {
     doctors,
     patients,
     appointments,
     prescriptions,
-    followUps,
-    messages,
     exportData,
     importData,
-    resetToDefault
+    resetToDemoData
   } = useApp();
 
-  const [importStatus, setImportStatus] = useState(null);
-  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [message, setMessage] = useState('');
 
-  const handleDownloadBackup = () => {
-    const jsonString = exportData();
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `meditrack_clinic_backup_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+  // Download all current local storage clinic records as JSON file
+  const handleExport = () => {
+    try {
+      const dataStr = exportData ? exportData() : JSON.stringify({ doctors, patients, appointments, prescriptions }, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `meditrack_backup_${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setMessage('Backup file downloaded successfully!');
+    } catch {
+      setMessage('Failed to generate export file.');
+    }
   };
 
-  const handleFileUpload = (e) => {
+  // Restore records from JSON file
+  const handleImport = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const text = event.target?.result;
-        if (typeof text === 'string') {
-          const success = importData(text);
-          if (success) {
-            setImportStatus({ type: 'success', message: 'Clinic backup restored successfully!' });
+        const content = event.target?.result;
+        if (typeof content === 'string') {
+          if (importData) {
+            importData(content);
           } else {
-            setImportStatus({ type: 'error', message: 'Failed to parse the backup JSON structure.' });
+            const parsed = JSON.parse(content);
+            if (parsed.appointments) localStorage.setItem('meditrack_v2026_appointments', JSON.stringify(parsed.appointments));
+            if (parsed.patients) localStorage.setItem('meditrack_v2026_patients', JSON.stringify(parsed.patients));
           }
+          setMessage('Data restored successfully from backup!');
         }
-      } catch (err) {
-        setImportStatus({ type: 'error', message: 'Invalid JSON file upload.' });
+      } catch {
+        setMessage('Error: Invalid JSON backup file.');
       }
     };
     reader.readAsText(file);
   };
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-150">
-      <PageHeader
-        title="Data Backup, Recovery &amp; Clinic State Management"
-        subtitle="Export full database snapshots in JSON format, restore past clinic states, or reset to initial clinical baseline."
-      />
+  const handleReset = () => {
+    if (window.confirm('Reset all clinic data to default initial demonstration records?')) {
+      resetToDemoData();
+      setMessage('All records have been reset to factory defaults.');
+    }
+  };
 
-      {/* Backup Status Banner */}
-      {importStatus && (
-        <div
-          className={`p-4 rounded-2xl border flex items-center justify-between text-xs font-bold ${
-            importStatus.type === 'success'
-              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-              : 'bg-rose-50 text-rose-800 border-rose-200'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            {importStatus.type === 'success' ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-            ) : (
-              <AlertTriangle className="w-5 h-5 text-rose-600" />
-            )}
-            <span>{importStatus.message}</span>
-          </div>
-          <button onClick={() => setImportStatus(null)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
-            &times;
-          </button>
+  return (
+    <div className="max-w-2xl mx-auto space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-800">Data Backup & Restore</h1>
+        <p className="text-gray-500 text-sm">Save your clinic records to disk or restore initial data</p>
+      </div>
+
+      {message && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-700 p-3 rounded-lg text-sm font-medium">
+          {message}
         </div>
       )}
 
-      {/* Clinical Database Metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5">
-        <Card className="p-4 text-center bg-white border-slate-200/90 shadow-xs">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Doctors</span>
-          <strong className="text-xl font-black text-slate-900 mt-1 block font-mono">{doctors.length}</strong>
-        </Card>
-
-        <Card className="p-4 text-center bg-white border-slate-200/90 shadow-xs">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Patients</span>
-          <strong className="text-xl font-black text-slate-900 mt-1 block font-mono">{patients.length}</strong>
-        </Card>
-
-        <Card className="p-4 text-center bg-white border-slate-200/90 shadow-xs">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Appointments</span>
-          <strong className="text-xl font-black text-blue-600 mt-1 block font-mono">{appointments.length}</strong>
-        </Card>
-
-        <Card className="p-4 text-center bg-white border-slate-200/90 shadow-xs">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Prescriptions</span>
-          <strong className="text-xl font-black text-emerald-600 mt-1 block font-mono">{prescriptions.length}</strong>
-        </Card>
-
-        <Card className="p-4 text-center bg-white border-slate-200/90 shadow-xs">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Messages</span>
-          <strong className="text-xl font-black text-purple-600 mt-1 block font-mono">{messages.length}</strong>
-        </Card>
-      </div>
-
-      {/* Backup Actions Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Export Card */}
-        <Card className="p-6 flex flex-col justify-between space-y-4 border-slate-200/90 shadow-xs">
-          <div className="space-y-2">
-            <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-              <Download className="w-5 h-5" />
-            </div>
-            <h3 className="text-base font-extrabold text-slate-900">Export Clinical Archive (JSON)</h3>
-            <p className="text-xs text-slate-500 leading-relaxed font-medium">
-              Download a complete snapshot of doctors, patient charts, queued appointments, electronic prescriptions, and messages.
-            </p>
+      {/* Summary of Current Stored Data */}
+      <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 space-y-3">
+        <h2 className="font-bold text-gray-800 text-base">Current Database Stats</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <span className="text-xs text-gray-400 block">Doctors</span>
+            <span className="text-xl font-bold text-gray-800">{doctors.length}</span>
           </div>
-          <Button
-            variant="primary"
-            size="md"
-            onClick={handleDownloadBackup}
-            icon={<Download className="w-4 h-4" />}
-            className="w-full font-bold shadow-md shadow-blue-500/25"
-          >
-            Download Database Backup (.json)
-          </Button>
-        </Card>
-
-        {/* Import Card */}
-        <Card className="p-6 flex flex-col justify-between space-y-4 border-slate-200/90 shadow-xs">
-          <div className="space-y-2">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-              <Upload className="w-5 h-5" />
-            </div>
-            <h3 className="text-base font-extrabold text-slate-900">Restore from JSON Backup</h3>
-            <p className="text-xs text-slate-500 leading-relaxed font-medium">
-              Upload a previously exported MediTrack JSON snapshot to restore appointments, doctor rosters, and patient records.
-            </p>
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <span className="text-xs text-gray-400 block">Patients</span>
+            <span className="text-xl font-bold text-gray-800">{patients.length}</span>
           </div>
-          <label className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl cursor-pointer transition-colors shadow-xs">
-            <Upload className="w-4 h-4" /> Select Backup File
-            <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
-          </label>
-        </Card>
-      </div>
-
-      {/* Reset State Action */}
-      <Card className="p-6 border-rose-200 bg-rose-50/40 shadow-2xs">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <h4 className="text-sm font-extrabold text-rose-900 flex items-center gap-2">
-              <RotateCcw className="w-4 h-4 text-rose-600" /> Reset to Initial Demonstration Data
-            </h4>
-            <p className="text-xs text-rose-700/80 font-medium">
-              Restore default roster of 6 physicians, 8 patient charts, sample queues, and active electronic prescriptions.
-            </p>
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <span className="text-xs text-gray-400 block">Bookings</span>
+            <span className="text-xl font-bold text-gray-800">{appointments.length}</span>
           </div>
-
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => {
-              if (window.confirm('Are you sure you want to reset all records to default demo data?')) {
-                resetToDefault();
-                setImportStatus({ type: 'success', message: 'Demo data reset successfully.' });
-              }
-            }}
-            className="font-bold text-xs shadow-xs"
-          >
-            Reset Database
-          </Button>
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <span className="text-xs text-gray-400 block">Prescriptions</span>
+            <span className="text-xl font-bold text-gray-800">{prescriptions.length}</span>
+          </div>
         </div>
-      </Card>
+      </div>
+
+      {/* Actions */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-6">
+        {/* Export */}
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-5 border-b border-gray-100">
+          <div>
+            <h3 className="font-semibold text-gray-800 text-sm">Download JSON Backup</h3>
+            <p className="text-xs text-gray-500">Export all clinic patients, appointments, and prescriptions</p>
+          </div>
+          <button
+            onClick={handleExport}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2.5 rounded-lg transition"
+          >
+            Export Backup
+          </button>
+        </div>
+
+        {/* Import */}
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-5 border-b border-gray-100">
+          <div>
+            <h3 className="font-semibold text-gray-800 text-sm">Restore from File</h3>
+            <p className="text-xs text-gray-500">Upload a previously saved JSON backup file</p>
+          </div>
+          <label className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs px-4 py-2.5 rounded-lg transition cursor-pointer text-center">
+            Upload JSON
+            <input
+              type="file"
+              accept=".json,application/json"
+              onChange={handleImport}
+              className="hidden"
+            />
+          </label>
+        </div>
+
+        {/* Reset */}
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+          <div>
+            <h3 className="font-semibold text-red-600 text-sm">Reset to Demo Data</h3>
+            <p className="text-xs text-gray-500">Restore factory sample dataset and reset queues</p>
+          </div>
+          <button
+            onClick={handleReset}
+            className="bg-red-50 hover:bg-red-100 text-red-700 font-semibold text-xs px-4 py-2.5 rounded-lg border border-red-200 transition"
+          >
+            Reset Defaults
+          </button>
+        </div>
+      </div>
     </div>
   );
-};
+}

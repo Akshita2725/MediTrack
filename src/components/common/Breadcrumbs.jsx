@@ -23,8 +23,7 @@ const routeLabels = {
   'pharmacy': 'Pharmacy Store',
   'pharmacy-store': 'Pharmacy Store',
   'store': 'Pharmacy Store',
-  'register': 'Patient Intake Registration',
-  'api-explorer': 'REST API Hub'
+  'register': 'Patient Intake Registration'
 };
 
 export const Breadcrumbs = () => {

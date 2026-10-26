@@ -26,7 +26,6 @@ import { BackupPage } from './pages/BackupPage.jsx';
 import { DoctorPortfolioPage } from './pages/DoctorPortfolioPage.jsx';
 import { PharmacyStorePage } from './pages/PharmacyStorePage.jsx';
 import { RegistrationPage } from './pages/RegistrationPage.jsx';
-import { ApiExplorerPage } from './pages/ApiExplorerPage.jsx';
 
 export default function App() {
   return (
@@ -69,7 +68,6 @@ export default function App() {
                 <Route path="/pharmacy-store" element={<PharmacyStorePage />} />
                 <Route path="/store" element={<PharmacyStorePage />} />
                 <Route path="/register" element={<RegistrationPage />} />
-                <Route path="/api-explorer" element={<ApiExplorerPage />} />
 
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>

@@ -16,7 +16,6 @@ import {
   ShoppingBag,
   UserPlus,
   Award,
-  Globe,
   Sparkles,
   ClipboardList,
   HeartHandshake
@@ -233,22 +232,6 @@ export const Navbar = () => {
                 )}
               </NavLink>
             ))}
-
-            {/* Discreet Learning / Tools Link */}
-            <div className="ml-auto pl-4 border-l border-slate-200 flex items-center gap-2 text-xs">
-              <NavLink
-                to="/api-explorer"
-                className={({ isActive }) =>
-                  `flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors ${
-                    isActive ? 'bg-slate-200/70 text-slate-900 font-bold' : ''
-                  }`
-                }
-                title="Curriculum REST API & GitHub explorer"
-              >
-                <Globe className="w-3.5 h-3.5" />
-                <span className="hidden xl:inline">API & Research Hub</span>
-              </NavLink>
-            </div>
           </nav>
         </div>
       </div>
@@ -286,15 +269,6 @@ export const Navbar = () => {
                 )}
               </NavLink>
             ))}
-
-            <NavLink
-              to="/api-explorer"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2.5 p-2.5 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-50"
-            >
-              <Globe className="w-4 h-4" />
-              <span>API Explorer & GitHub Viewer</span>
-            </NavLink>
           </div>
         </div>
       )}
